@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="SVG JPG PNG converter met kroon">
+  <defs>
+    <linearGradient id="bgB2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#15803d"/>
+      <stop offset="100%" stop-color="#22c55e"/>
+    </linearGradient>
+    <linearGradient id="goldB" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fff4b8"/>
+      <stop offset="35%" stop-color="#f5c542"/>
+      <stop offset="70%" stop-color="#d4a017"/>
+      <stop offset="100%" stop-color="#a67c00"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="url(#bgB2)"/>
+
+  <!-- Verbindingspijlen -->
+  <g fill="none" stroke="#ffffff" stroke-width="18"
+     stroke-linecap="round" stroke-linejoin="round" opacity="0.9">
+    <path d="M 180 210 L 332 210"/>
+    <path d="M 332 210 L 332 362"/>
+    <path d="M 332 362 L 180 362"/>
+    <path d="M 180 362 L 180 210"/>
+
+    <!-- Pijlpunten -->
+    <path d="M 316 194 L 340 210 L 316 226"/>
+    <path d="M 316 346 L 332 370 L 348 346"/>
+    <path d="M 196 346 L 172 362 L 196 378"/>
+    <path d="M 196 194 L 180 210 L 196 226"/>
+  </g>
+
+  <!-- Drie formaat-chips met gouden letters -->
+  <g font-family="system-ui, -apple-system, sans-serif"
+     font-size="48" font-weight="800"
+     text-anchor="middle" dominant-baseline="central"
+     stroke="#7a5900" stroke-width="1.8"
+     paint-order="stroke fill">
+
+    <!-- SVG boven -->
+    <rect x="156" y="150" width="200" height="80" rx="20" fill="#ffffff"/>
+    <text x="256" y="192" fill="url(#goldB)">SVG</text>
+
+    <!-- JPG linksonder -->
+    <rect x="56" y="342" width="200" height="80" rx="20" fill="#ffffff"/>
+    <text x="156" y="384" fill="url(#goldB)">JPG</text>
+
+    <!-- PNG rechtsonder -->
+    <rect x="256" y="342" width="200" height="80" rx="20" fill="#ffffff"/>
+    <text x="356" y="384" fill="url(#goldB)">PNG</text>
+  </g>
+
+  <!-- Middenpijltje in goud -->
+  <g transform="translate(256 286)">
+    <rect x="-10" y="-36" width="20" height="48" rx="5" fill="url(#goldB)"/>
+    <path d="M-24 -6 L0 22 L24 -6 Z" fill="url(#goldB)"/>
+  </g>
+
+  <!-- Kroontje -->
+  <g transform="translate(256 105)" fill="url(#goldB)"
+     stroke="#7a5900" stroke-width="3"
+     stroke-linejoin="round" paint-order="stroke fill">
+    <path d="M -70 20 L -70 -20 L -35 0 L 0 -35 L 35 0 L 70 -20 L 70 20 Z"/>
+    <rect x="-75" y="22" width="150" height="14" rx="6"/>
+    <circle cx="-70" cy="-24" r="8" stroke-width="2"/>
+    <circle cx="0"   cy="-40" r="8" stroke-width="2"/>
+    <circle cx="70"  cy="-24" r="8" stroke-width="2"/>
+  </g>
+</svg>
