@@ -1,11 +1,10 @@
 /* =========================================================
-   Service Worker — PNG Converter
-   Repo: SVG-JPG-PNG-Converter
-   Convert logos (PNG, JPG, SVG) to multiple PNG sizes.
-   Works fully offline. Multi-language (11 languages).
+   Service Worker — SVG-JPG-PNG-Converter
+   GitHub: https://github.com/groenklimaat/SVG-JPG-PNG-Converter
+   Live:   https://groenklimaat.github.io/SVG-JPG-PNG-Converter/
    ========================================================= */
 
-const CACHE_NAME = 'svg-jpg-png-converter-v1';
+const CACHE_NAME = 'svg-jpg-png-converter-v3';
 
 const CORE_ASSETS = [
   './',
@@ -14,6 +13,8 @@ const CORE_ASSETS = [
   './privacy.html',
   './manifest.json',
   './icon.svg',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
   'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'
 ];
 
