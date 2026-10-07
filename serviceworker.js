@@ -4,7 +4,7 @@
    Live:   https://groenklimaat.github.io/SVG-JPG-PNG-Converter/
    ========================================================= */
 
-const CACHE_NAME = 'svg-jpg-png-converter-v3';
+const CACHE_NAME = 'svg-jpg-png-converter-v5';
 
 const CORE_ASSETS = [
   './',
@@ -13,8 +13,8 @@ const CORE_ASSETS = [
   './privacy.html',
   './manifest.json',
   './icon.svg',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
+  './icon_192x192.png',
+  './icon_512x512.png',
   'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'
 ];
 
@@ -60,13 +60,10 @@ self.addEventListener('activate', event => {
    --------------------------------------------------------- */
 self.addEventListener('fetch', event => {
   const req = event.request;
-
-  // Alleen GET-requests cachen
   if (req.method !== 'GET') return;
 
   const url = new URL(req.url);
 
-  /* --- Navigatie-requests (HTML-pagina's) --- */
   if (req.mode === 'navigate') {
     event.respondWith(
       fetch(req)
@@ -80,7 +77,6 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  /* --- Eigen assets (zelfde origin) → cache-first --- */
   if (url.origin === self.location.origin) {
     event.respondWith(
       caches.match(req).then(cached => {
@@ -95,7 +91,6 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  /* --- Externe assets (JSZip CDN) → cache-first met netwerk-fallback --- */
   event.respondWith(
     caches.match(req).then(cached => {
       if (cached) return cached;
