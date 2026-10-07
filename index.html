@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PNG Converter — Logo, JPG & SVG to PNG</title>
+
+<!-- PWA -->
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#4a7dff">
+<link rel="icon" type="image/svg+xml" href="./icon.svg">
+<link rel="apple-touch-icon" href="./icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="PNG Converter">
+<meta name="description" content="Convert a logo (PNG, JPG or SVG) to multiple PNG sizes with transparent background. Download as ZIP. Works fully offline.">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: #f4f5f7;
+    margin: 0;
+    padding: 40px 20px;
+    display: flex;
+    justify-content: center;
+  }
+  .card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 32px;
+    max-width: 680px;
+    width: 100%;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+    position: relative;
+  }
+  .lang-switch {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 13px;
+    padding: 6px 10px;
+    border: 1px solid #d5d8dd;
+    border-radius: 8px;
+    background: #fff;
+    cursor: pointer;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 8px;
+    padding-right: 120px;
+  }
+  .brand .logo {
+    width: 72px;
+    height: 72px;
+    flex-shrink: 0;
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  }
+  .brand h1 {
+    margin: 0;
+    font-size: 22px;
+    line-height: 1.2;
+  }
+  p.sub {
+    margin: 0 0 24px;
+    color: #666;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  #drop {
+    border: 2px dashed #c9ccd1;
+    border-radius: 12px;
+    padding: 36px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: 0.2s;
+    background: #fafbfc;
+  }
+  #drop:hover, #drop.dragover {
+    border-color: #4a7dff;
+    background: #eef3ff;
+  }
+  #drop svg { width: 40px; height: 40px; color: #8a8f98; }
+  #drop p { margin: 8px 0 0; color: #555; font-size: 14px; }
+  input[type=file] { display: none; }
+
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 24px;
+  }
+  label { font-size: 13px; color: #333; font-weight: 600; display: block; margin-bottom: 6px; }
+  select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d5d8dd;
+    border-radius: 8px;
+    font-size: 14px;
+    background: #fff;
+  }
+  input[type=color] {
+    width: 100%;
+    height: 42px;
+    border: 1px solid #d5d8dd;
+    border-radius: 8px;
+    padding: 3px;
+    background: #fff;
+    cursor: pointer;
+  }
+
+  .sizes-block {
+    margin-top: 20px;
+    padding: 16px;
+    background: #f8f9fb;
+    border-radius: 10px;
+  }
+  .sizes-block > label { margin-bottom: 10px; }
+  .sizes-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .size-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #fff;
+    border: 1px solid #d5d8dd;
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    user-select: none;
+    transition: 0.15s;
+  }
+  .size-chip:has(input:checked) {
+    background: #4a7dff;
+    color: #fff;
+    border-color: #4a7dff;
+  }
+  .size-chip input { margin: 0; accent-color: #fff; }
+
+  .custom-add {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .custom-add input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #d5d8dd;
+    border-radius: 8px;
+    font-size: 13px;
+  }
+  .custom-add button {
+    margin: 0;
+    width: auto;
+    padding: 8px 14px;
+    font-size: 13px;
+    background: #6b7280;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .custom-add button:hover { background: #4b5563; }
+
+  .checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    margin-top: 16px;
+    color: #333;
+  }
+  .checkbox input { width: 16px; height: 16px; }
+
+  .btn-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 24px;
+  }
+  .btn-row button {
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.15s;
+  }
+  #downloadZip { background: #4a7dff; color: #fff; }
+  #downloadZip:hover:not(:disabled) { background: #3a6aeb; }
+  #downloadZip:disabled { background: #c9ccd1; cursor: not-allowed; }
+
+  #downloadLoose { background: #e5e7eb; color: #333; }
+  #downloadLoose:hover:not(:disabled) { background: #d5d8dd; }
+  #downloadLoose:disabled { background: #f0f0f0; color: #aaa; cursor: not-allowed; }
+
+  #previews {
+    margin-top: 24px;
+    display: none;
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: center;
+  }
+  .preview-item { text-align: center; }
+  .preview-item canvas {
+    max-width: 120px;
+    max-height: 120px;
+    width: auto;
+    height: auto;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    background:
+      linear-gradient(45deg, #eee 25%, transparent 25%),
+      linear-gradient(-45deg, #eee 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #eee 75%),
+      linear-gradient(-45deg, transparent 75%, #eee 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+  }
+  .preview-item .label {
+    margin-top: 6px;
+    font-size: 12px;
+    color: #666;
+    font-weight: 600;
+  }
+
+  .status {
+    margin-top: 12px;
+    font-size: 13px;
+    color: #4a7dff;
+    text-align: center;
+    min-height: 18px;
+  }
+
+  footer {
+    margin-top: 24px;
+    text-align: center;
+    font-size: 12px;
+    color: #888;
+  }
+  footer a { color: #4a7dff; text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <select class="lang-switch" id="langSwitch" aria-label="Language"></select>
+
+  <div class="brand">
+    <!-- ============ HET GOUDEN RECYCLE-KROON ICOON ============ -->
+    <svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="SVG JPG PNG converter met kroon">
+      <defs>
+        <linearGradient id="bgB2" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#15803d"/>
+          <stop offset="100%" stop-color="#22c55e"/>
+        </linearGradient>
+        <linearGradient id="goldB" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#fff4b8"/>
+          <stop offset="35%" stop-color="#f5c542"/>
+          <stop offset="70%" stop-color="#d4a017"/>
+          <stop offset="100%" stop-color="#a67c00"/>
+        </linearGradient>
+      </defs>
+
+      <rect width="512" height="512" rx="112" fill="url(#bgB2)"/>
+
+      <g fill="none" stroke="#ffffff" stroke-width="18"
+         stroke-linecap="round" stroke-linejoin="round" opacity="0.9">
+        <path d="M 180 210 L 332 210"/>
+        <path d="M 332 210 L 332 362"/>
+        <path d="M 332 362 L 180 362"/>
+        <path d="M 180 362 L 180 210"/>
+        <path d="M 316 194 L 340 210 L 316 226"/>
+        <path d="M 316 346 L 332 370 L 348 346"/>
+        <path d="M 196 346 L 172 362 L 196 378"/>
+        <path d="M 196 194 L 180 210 L 196 226"/>
+      </g>
+
+      <g font-family="system-ui, -apple-system, sans-serif"
+         font-size="48" font-weight="800"
+         text-anchor="middle" dominant-baseline="central"
+         stroke="#7a5900" stroke-width="1.8"
+         paint-order="stroke fill">
+        <rect x="156" y="150" width="200" height="80" rx="20" fill="#ffffff"/>
+        <text x="256" y="192" fill="url(#goldB)">SVG</text>
+        <rect x="56" y="342" width="200" height="80" rx="20" fill="#ffffff"/>
+        <text x="156" y="384" fill="url(#goldB)">JPG</text>
+        <rect x="256" y="342" width="200" height="80" rx="20" fill="#ffffff"/>
+        <text x="356" y="384" fill="url(#goldB)">PNG</text>
+      </g>
+
+      <g transform="translate(256 286)">
+        <rect x="-10" y="-36" width="20" height="48" rx="5" fill="url(#goldB)"/>
+        <path d="M-24 -6 L0 22 L24 -6 Z" fill="url(#goldB)"/>
+      </g>
+
+      <g transform="translate(256 105)" fill="url(#goldB)"
+         stroke="#7a5900" stroke-width="3"
+         stroke-linejoin="round" paint-order="stroke fill">
+        <path d="M -70 20 L -70 -20 L -35 0 L 0 -35 L 35 0 L 70 -20 L 70 20 Z"/>
+        <rect x="-75" y="22" width="150" height="14" rx="6"/>
+        <circle cx="-70" cy="-24" r="8" stroke-width="2"/>
+        <circle cx="0" cy="-40" r="8" stroke-width="2"/>
+        <circle cx="70" cy="-24" r="8" stroke-width="2"/>
+      </g>
+    </svg>
+
+    <h1 data-i18n="title">PNG Converter</h1>
+  </div>
+
+  <p class="sub" data-i18n="subtitle">Convert a logo (PNG, JPG or SVG) to any PNG size — download as ZIP or separate files.</p>
+
+  <div id="drop">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="17 8 12 3 7 8"/>
+      <line x1="12" y1="3" x2="12" y2="15"/>
+    </svg>
+    <p><strong data-i18n="dropStrong">Click</strong> <span data-i18n="dropText">or drag your file here</span></p>
+  </div>
+  <input type="file" id="file" accept="image/png,image/jpeg,image/svg+xml,.svg">
+
+  <div class="controls">
+    <div>
+      <label for="mode" data-i18n="modeLabel">Fit mode</label>
+      <select id="mode">
+        <option value="contain" data-i18n="modeContain">Fully visible</option>
+        <option value="cover" data-i18n="modeCover">Fill (crop)</option>
+        <option value="stretch" selected data-i18n="modeStretch">Stretch to square</option>
+      </select>
+    </div>
+    <div>
+      <label for="bg" data-i18n="bgLabel">Background color</label>
+      <input type="color" id="bg" value="#ffffff">
+    </div>
+  </div>
+
+  <div class="checkbox">
+    <input type="checkbox" id="transparent" checked>
+    <label for="transparent" style="margin:0;font-weight:400;" data-i18n="transparentLabel">Transparent background (PNG)</label>
+  </div>
+
+  <div class="checkbox">
+    <input type="checkbox" id="iconVersion">
+    <label for="iconVersion" style="margin:0;font-weight:400;" data-i18n="iconLabel">Icon version (extra padding + -icon in filename)</label>
+  </div>
+
+  <div class="sizes-block">
+    <label data-i18n="sizesLabel">Export formats (multiple possible)</label>
+    <div class="sizes-grid" id="sizesGrid">
+      <label class="size-chip"><input type="checkbox" value="512" checked> 512 × 512</label>
+      <label class="size-chip"><input type="checkbox" value="300" checked> 300 × 300</label>
+      <label class="size-chip"><input type="checkbox" value="192" checked> 192 × 192</label>
+      <label class="size-chip"><input type="checkbox" value="180"> 180 × 180</label>
+      <label class="size-chip"><input type="checkbox" value="152"> 152 × 152</label>
+      <label class="size-chip"><input type="checkbox" value="150" checked> 150 × 150</label>
+      <label class="size-chip"><input type="checkbox" value="120"> 120 × 120</label>
+      <label class="size-chip"><input type="checkbox" value="96"> 96 × 96</label>
+      <label class="size-chip"><input type="checkbox" value="72"> 72 × 72</label>
+      <label class="size-chip"><input type="checkbox" value="71" checked> 71 × 71</label>
+      <label class="size-chip"><input type="checkbox" value="64"> 64 × 64</label>
+      <label class="size-chip"><input type="checkbox" value="32"> 32 × 32</label>
+      <label class="size-chip"><input type="checkbox" value="16"> 16 × 16</label>
+    </div>
+    <div class="custom-add">
+      <input type="number" id="customSize" placeholder="Custom size (px)" min="16" max="4096" data-i18n-placeholder="customPlaceholder">
+      <button type="button" id="addSize" data-i18n="addButton">+ Add</button>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button id="downloadZip" disabled data-i18n="downloadZip">📦 Download ZIP</button>
+    <button id="downloadLoose" disabled data-i18n="downloadLoose">Download separate PNGs</button>
+  </div>
+
+  <div class="status" id="status"></div>
+
+  <div id="previews"></div>
+
+  <footer>
+    <a href="./privacy.html" data-i18n="privacyLink">Privacy Policy</a>
+  </footer>
+</div>
+
+<script>
+/* =========================================================
+   TRANSLATIONS (11 languages)
+   ========================================================= */
+const TRANSLATIONS = {
+  en: {
+    title: "PNG Converter",
+    subtitle: "Convert a logo (PNG, JPG or SVG) to any PNG size — download as ZIP or separate files.",
+    dropStrong: "Click", dropText: "or drag your file here",
+    modeLabel: "Fit mode", modeContain: "Fully visible", modeCover: "Fill (crop)", modeStretch: "Stretch to square",
+    bgLabel: "Background color", transparentLabel: "Transparent background (PNG)",
+    iconLabel: "Icon version (extra padding + -icon in filename)",
+    sizesLabel: "Export formats (multiple possible)", customPlaceholder: "Custom size (px)", addButton: "+ Add",
+    downloadZip: "📦 Download ZIP", downloadLoose: "Download separate PNGs", privacyLink: "Privacy Policy",
+    alertInvalidSize: "Enter a value between 16 and 4096.",
+    alertSvgError: "SVG could not be loaded.",
+    alertJsZipError: "JSZip could not be loaded. Check your internet connection.",
+    statusWorking: "Processing {size}×{size}... ({current}/{total})",
+    statusZipCreating: "Creating ZIP...",
+    statusZipDone: "✅ ZIP downloaded ({count} files)",
+    statusDownloading: "Downloading {size}×{size}... ({current}/{total})",
+    statusDownloaded: "✅ {count} files downloaded",
+    zipButton: "📦 Download ZIP ({count} {label})",
+    zipButtonOne: "file", zipButtonMany: "files", iconSuffix: " (icon)"
+  },
+  nl: {
+    title: "PNG-converter",
+    subtitle: "Zet een logo (PNG, JPG of SVG) om naar elk PNG-formaat — download als ZIP of losse bestanden.",
+    dropStrong: "Klik", dropText: "of sleep je bestand hier",
+    modeLabel: "Passend maken", modeContain: "Volledig zichtbaar", modeCover: "Vullen (bijsnijden)", modeStretch: "Uitrekken naar vierkant",
+    bgLabel: "Achtergrondkleur", transparentLabel: "Transparante achtergrond (PNG)",
+    iconLabel: "Icon versie (extra padding + -icon in bestandsnaam)",
+    sizesLabel: "Export-formaten (meerdere mogelijk)", customPlaceholder: "Eigen grootte (px)", addButton: "+ Toevoegen",
+    downloadZip: "📦 Download ZIP", downloadLoose: "Download losse PNG's", privacyLink: "Privacyverklaring",
+    alertInvalidSize: "Voer een waarde tussen 16 en 4096 in.",
+    alertSvgError: "SVG kon niet geladen worden.",
+    alertJsZipError: "JSZip kon niet geladen worden. Controleer je internetverbinding.",
+    statusWorking: "Bezig met {size}×{size}... ({current}/{total})",
+    statusZipCreating: "ZIP aan het maken...",
+    statusZipDone: "✅ ZIP gedownload ({count} bestanden)",
+    statusDownloading: "Download {size}×{size}... ({current}/{total})",
+    statusDownloaded: "✅ {count} bestanden gedownload",
+    zipButton: "📦 Download ZIP ({count} {label})",
+    zipButtonOne: "bestand", zipButtonMany: "bestanden", iconSuffix: " (icon)"
+  },
+  fr: {
+    title: "Convertisseur PNG",
+    subtitle: "Convertissez un logo (PNG, JPG ou SVG) en n'importe quelle taille PNG — téléchargez en ZIP ou fichiers séparés.",
+    dropStrong: "Cliquez", dropText: "ou déposez votre fichier ici",
+    modeLabel: "Mode d'ajustement", modeContain: "Entièrement visible", modeCover: "Remplir (recadrer)", modeStretch: "Étirer en carré",
+    bgLabel: "Couleur de fond", transparentLabel: "Fond transparent (PNG)",
+    iconLabel: "Version icône (marge supplémentaire + -icon dans le nom)",
+    sizesLabel: "Formats d'export (plusieurs possibles)", customPlaceholder: "Taille personnalisée (px)", addButton: "+ Ajouter",
+    downloadZip: "📦 Télécharger ZIP", downloadLoose: "Télécharger PNG séparés", privacyLink: "Politique de confidentialité",
+    alertInvalidSize: "Entrez une valeur entre 16 et 4096.",
+    alertSvgError: "Impossible de charger le SVG.",
+    alertJsZipError: "Impossible de charger JSZip. Vérifiez votre connexion.",
+    statusWorking: "Traitement {size}×{size}... ({current}/{total})",
+    statusZipCreating: "Création du ZIP...",
+    statusZipDone: "✅ ZIP téléchargé ({count} fichiers)",
+    statusDownloading: "Téléchargement {size}×{size}... ({current}/{total})",
+    statusDownloaded: "✅ {count} fichiers téléchargés",
+    zipButton: "📦 Télécharger ZIP ({count} {label})",
+    zipButtonOne: "fichier", zipButtonMany: "fichiers", iconSuffix: " (icône)"
+  },
+  de: {
+    title: "PNG-Konverter",
+    subtitle: "Wandle ein Logo (PNG, JPG oder SVG) in jede PNG-Größe um — Download als ZIP oder einzelne Dateien.",
+    dropStrong: "Klicke", dropText: "oder ziehe deine Datei hierher",
+    modeLabel: "Anpassungsmodus", modeContain: "Vollständig sichtbar", modeCover: "Füllen (zuschneiden)", modeStretch: "Zum Quadrat dehnen",
+    bgLabel: "Hintergrundfarbe", transparentLabel: "Transparenter Hintergrund (PNG)",
+    iconLabel: "Icon-Version (zusätzlicher Abstand + -icon im Dateinamen)",
+    sizesLabel: "Exportformate (mehrere möglich)", customPlaceholder: "Eigene Größe (px)", addButton: "+ Hinzufügen",
+    downloadZip: "📦 ZIP herunterladen", downloadLoose: "Einzelne PNGs herunterladen", privacyLink: "Datenschutzerklärung",
+    alertInvalidSize: "Gib einen Wert zwischen 16 und 4096 ein.",
+    alertSvgError: "SVG konnte nicht geladen werden.",
+    alertJsZipError: "JSZip konnte nicht geladen werden. Prüfe deine Internetverbindung.",
+    statusWorking: "Verarbeite {size}×{size}... ({current}/{total})",
+    statusZipCreating: "ZIP wird erstellt...",
+    statusZipDone: "✅ ZIP heruntergeladen ({count} Dateien)",
+    statusDownloading: "Lade {size}×{size} herunter... ({current}/{total})",
+    statusDownloaded: "✅ {count} Dateien heruntergeladen",
+    zipButton: "📦 ZIP herunterladen ({count} {label})",
+    zipButtonOne: "Datei", zipButtonMany: "Dateien", iconSuffix: " (Icon)"
+  },
+  es: {
+    title: "Convertidor PNG",
+    subtitle: "Convierte un logo (PNG, JPG o SVG) a cualquier tamaño PNG — descarga como ZIP o archivos separados.",
+    dropStrong: "Haz clic", dropText: "o arrastra tu archivo aquí",
+    modeLabel: "Modo de ajuste", modeContain: "Totalmente visible", modeCover: "Rellenar (recortar)", modeStretch: "Estirar a cuadrado",
+    bgLabel: "Color de fondo", transparentLabel: "Fondo transparente (PNG)",
+    iconLabel: "Versión icono (relleno extra + -icon en el nombre)",
+    sizesLabel: "Formatos de exportación (varios posibles)", customPlaceholder: "Tamaño personalizado (px)", addButton: "+ Añadir",
+    downloadZip: "📦 Descargar ZIP", downloadLoose: "Descargar PNG sueltos", privacyLink: "Política de privacidad",
+    alertInvalidSize: "Introduce un valor entre 16 y 4096.",
+    alertSvgError: "No se pudo cargar el SVG.",
+    alertJsZipError: "No se pudo cargar JSZip. Comprueba tu conexión.",
+    statusWorking: "Procesando {size}×{size}... ({current}/{total})",
+    statusZipCreating: "Creando ZIP...",
+    statusZipDone: "✅ ZIP descargado ({count} archivos)",
+    statusDownloading: "Descargando {size}×{size}... ({current}/{total})",
+    statusDownloaded: "✅ {count} archivos descargados",
+    zipButton: "📦 Descargar ZIP ({count} {label})",
+    zipButtonOne: "archivo", zipButtonMany: "archivos", iconSuffix: " (icono)"
+  },
+  pt: {
+    title: "Conversor PNG",
+    subtitle: "Converta um logo (PNG, JPG ou SVG) em qualquer tamanho PNG — baixe como ZIP ou ficheiros separados.",
+    dropStrong: "Clique", dropText: "ou arraste o seu ficheiro aqui",
+    modeLabel: "Modo de ajuste", modeContain: "Totalmente visível", modeCover: "Preencher (recortar)", modeStretch: "Esticar para quadrado",
+    bgLabel: "Cor de fundo", transparentLabel: "Fundo transparente (PNG)",
+    iconLabel: "Versão ícone (espaçamento extra + -icon no nome)",
+    sizesLabel: "Formatos de exportação (vários possíveis)", customPlaceholder: "Tamanho personalizado (px)", addButton: "+ Adicionar",
+    downloadZip: "📦 Baixar ZIP", downloadLoose: "Baixar PNGs individuais", privacyLink: "Política de privacidade",
+    alertInvalidSize: "Insira um valor entre 16 e 4096.",
+    alertSvgError: "Não foi possível carregar o SVG.",
+    alertJsZipError: "Não foi possível carregar o JSZip. Verifique a sua ligação.",
+    statusWorking: "A processar {size}×{size}... ({current}/{total})",
+    statusZipCreating: "A criar ZIP...",
+    statusZipDone: "✅ ZIP baixado ({count} ficheiros)",
+    statusDownloading: "A baixar {size}×{size}... ({current}/{total})",
+    statusDownloaded: "✅ {count} ficheiros baixados",
+    zipButton: "📦 Baixar ZIP ({count} {label})",
+    zipButtonOne: "ficheiro", zipButtonMany: "ficheiros", iconSuffix: " (ícone)"
+  },
+  sv: {
+    title: "PNG-omvandlare",
+    subtitle: "Omvandla en logotyp (PNG, JPG eller SVG) till valfri PNG-storlek — ladda ner som ZIP eller separata filer.",
+    dropStrong: "Klicka", dropText: "eller släpp din fil här",
+    modeLabel: "Anpassningsläge", modeContain: "Helt synlig", modeCover: "Fyll (beskär)", modeStretch: "Sträck till kvadrat",
+    bgLabel: "Bakgrundsfärg", transparentLabel: "Transparent bakgrund (PNG)",
+    iconLabel: "Ikonversion (extra utfyllnad + -icon i filnamn)",
+    sizesLabel: "Exportformat (flera möjliga)", customPlaceholder: "Anpassad storlek (px)", addButton: "+ Lägg till",
+    downloadZip: "📦 Ladda ner ZIP", downloadLoose: "Ladda ner separata PNG-filer", privacyLink: "Integritetspolicy",
+    alertInvalidSize: "Ange ett värde mellan 16 och 4096.",
+    alertSvgError: "SVG kunde inte laddas.",
+    alertJsZipError: "JSZip kunde inte laddas. Kontrollera din internetanslutning.",
+    statusWorking: "Bearbetar {size}×{size}... ({current}/{total})",
+    statusZipCreating: "Skapar ZIP...",
+    statusZipDone: "✅ ZIP nedladdad ({count} filer)",
+    statusDownloading: "Laddar ner {size}×{size}... ({current}/{total})",
+    statusDownloaded: "✅ {count} filer nedladdade",
+    zipButton: "📦 Ladda ner ZIP ({count} {label})",
+    zipButtonOne: "fil", zipButtonMany: "filer", iconSuffix: " (ikon)"
+  },
+  no: {
+    title: "PNG-konverterer",
+    subtitle: "Konverter en logo (PNG, JPG eller SVG) til hvilken som helst PNG-størrelse — last ned som ZIP eller separate filer.",
+    dropStrong: "Klikk", dropText: "eller slipp filen din her",
+    modeLabel: "Tilpasningsmodus", modeContain: "Helt synlig", modeCover: "Fyll (beskjær)", modeStretch: "Strekk til kvadrat",
+    bgLabel: "Bakgrunnsfarge", transparentLabel: "Gjennomsiktig bakgrunn (PNG)",
+    iconLabel: "Ikonversjon (ekstra polstring + -icon i filnavn)",
+    sizesLabel: "Eksportformater (flere mulige)", customPlaceholder: "Egendefinert størrelse (px)", addButton: "+ Legg til",
+    downloadZip: "📦 Last ned ZIP", downloadLoose: "Last ned separate PNG-er", privacyLink: "Personvernpolicy",
+    alertInvalidSize: "Skriv inn en verdi mellom 16 og 4096.",
+    alertSvgError: "SVG kunne ikke lastes.",
+    alertJsZipError: "JSZip kunne ikke lastes. Sjekk internettforbindelsen.",
+    statusWorking: "Behandler {size}×{size}... ({current}/{total})",
+    statusZipCreating: "Lager ZIP...",
+    statusZipDone: "✅ ZIP lastet ned ({count} filer)",
+    statusDownloading: "Laster ned {size}×{size}... ({current}/{total})",
+    statusDownloaded: "✅ {count} filer lastet ned",
+    zipButton: "📦 Last ned ZIP ({count} {label})",
+    zipButtonOne: "fil", zipButtonMany: "filer", iconSuffix: " (ikon)"
+  },
+  uk: {
+    title: "Конвертер PNG",
+    subtitle: "Перетворіть логотип (PNG, JPG або SVG) у будь-який розмір PNG — завантажте як ZIP або окремі файли.",
+    dropStrong: "Натисніть", dropText: "або перетягніть файл сюди",
+    modeLabel: "Режим підгонки", modeContain: "Повністю видимий", modeCover: "Заповнити (обрізати)", modeStretch: "Розтягнути до квадрата",
+    bgLabel: "Колір фону", transparentLabel: "Прозорий фон (PNG)",
+    iconLabel: "Версія значка (додатковий відступ + -icon у назві)",
+    sizesLabel: "Формати експорту (декілька можливих)", customPlaceholder: "Власний розмір (px)", addButton: "+ Додати",
+    downloadZip: "📦 Завантажити ZIP", downloadLoose: "Завантажити окремі PNG", privacyLink: "Політика конфіденційності",
+    alertInvalidSize: "Введіть значення від 16 до 4096.",
+    alertSvgError: "Не вдалося завантажити SVG.",
+    alertJsZipError: "Не вдалося завантажити JSZip. Перевірте з'єднання.",
+    statusWorking: "Обробка {size}×{size}... ({current}/{total})",
+    statusZipCreating: "Створення ZIP...",
+    statusZipDone: "✅ ZIP завантажено ({count} файлів)",
+    statusDownloading: "Завантаження {size}×{size}... ({current}/{total})",
+    statusDownloaded: "✅ {count} файлів завантажено",
+    zipButton: "📦 Завантажити ZIP ({count} {label})",
+    zipButtonOne: "файл", zipButtonMany: "файлів", iconSuffix: " (значок)"
+  },
+  zh: {
+    title: "PNG 转换器",
+    subtitle: "将徽标（PNG、JPG 或 SVG）转换为任意 PNG 尺寸 — 以 ZIP 或单独文件下载。",
+    dropStrong: "点击", dropText: "或将文件拖到这里",
+    modeLabel: "适配模式", modeContain: "完全可见", modeCover: "填充（裁剪）", modeStretch: "拉伸为正方形",
+    bgLabel: "背景颜色", transparentLabel: "透明背景（PNG）",
+    iconLabel: "图标版本（额外内边距 + 文件名加 -icon）",
+    sizesLabel: "导出格式（可多选）", customPlaceholder: "自定义尺寸（px）", addButton: "+ 添加",
+    downloadZip: "📦 下载 ZIP", downloadLoose: "下载单独的 PNG", privacyLink: "隐私政策",
+    alertInvalidSize: "请输入 16 到 4096 之间的值。",
+    alertSvgError: "无法加载 SVG。",
+    alertJsZipError: "无法加载 JSZip。请检查网络连接。",
+    statusWorking: "正在处理 {size}×{size}...（{current}/{total}）",
+    statusZipCreating: "正在创建 ZIP...",
+    statusZipDone: "✅ 已下载 ZIP（{count} 个文件）",
+    statusDownloading: "正在下载 {size}×{size}...（{current}/{total}）",
+    statusDownloaded: "✅ 已下载 {count} 个文件",
+    zipButton: "📦 下载 ZIP（{count} {label}）",
+    zipButtonOne: "个文件", zipButtonMany: "个文件", iconSuffix: "（图标）"
+  },
+  ja: {
+    title: "PNG コンバーター",
+    subtitle: "ロゴ（PNG、JPG、SVG）を任意の PNG サイズに変換 — ZIP または個別ファイルとしてダウンロード。",
+    dropStrong: "クリック", dropText: "またはここにファイルをドロップ",
+    modeLabel: "フィットモード", modeContain: "全体を表示", modeCover: "塗りつぶし（切り抜き）", modeStretch: "正方形に引き伸ばす",
+    bgLabel: "背景色", transparentLabel: "透明な背景（PNG）",
+    iconLabel: "アイコンバージョン（余白追加 + ファイル名に -icon）",
+    sizesLabel: "エクスポート形式（複数選択可）", customPlaceholder: "カスタムサイズ（px）", addButton: "+ 追加",
+    downloadZip: "📦 ZIP をダウンロード", downloadLoose: "個別の PNG をダウンロード", privacyLink: "プライバシーポリシー",
+    alertInvalidSize: "16 から 4096 の間の値を入力してください。",
+    alertSvgError: "SVG を読み込めませんでした。",
+    alertJsZipError: "JSZip を読み込めませんでした。インターネット接続を確認してください。",
+    statusWorking: "{size}×{size} を処理中...（{current}/{total}）",
+    statusZipCreating: "ZIP を作成中...",
+    statusZipDone: "✅ ZIP をダウンロードしました（{count} ファイル）",
+    statusDownloading: "{size}×{size} をダウンロード中...（{current}/{total}）",
+    statusDownloaded: "✅ {count} ファイルをダウンロードしました",
+    zipButton: "📦 ZIP をダウンロード（{count} {label}）",
+    zipButtonOne: "ファイル", zipButtonMany: "ファイル", iconSuffix: "（アイコン）"
+  }
+};
+
+const LANG_NAMES = {
+  en: "English", nl: "Nederlands", fr: "Français", de: "Deutsch",
+  es: "Español", pt: "Português", sv: "Svenska", no: "Norsk",
+  uk: "Українська", zh: "中文", ja: "日本語"
+};
+
+let currentLang = 'en';
+
+function detectLanguage() {
+  const saved = localStorage.getItem('logo2png_lang');
+  if (saved && TRANSLATIONS[saved]) return saved;
+  const browser = (navigator.language || 'en').toLowerCase();
+  const short = browser.split('-')[0];
+  if (TRANSLATIONS[short]) return short;
+  if (browser.startsWith('zh')) return 'zh';
+  if (browser.startsWith('ja')) return 'ja';
+  return 'en';
+}
+
+function t(key, vars) {
+  let str = (TRANSLATIONS[currentLang] && TRANSLATIONS[currentLang][key])
+         || TRANSLATIONS.en[key] || key;
+  if (vars) {
+    Object.keys(vars).forEach(k => {
+      str = str.replace(new RegExp('\\{' + k + '\\}', 'g'), vars[k]);
+    });
+  }
+  return str;
+}
+
+function applyTranslations() {
+  document.documentElement.lang = currentLang;
+  document.title = t('title') + " — Logo, JPG & SVG to PNG";
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = t(el.getAttribute('data-i18n'));
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
+  });
+  renderAll();
+}
+
+function buildLangSwitcher() {
+  const sel = document.getElementById('langSwitch');
+  sel.innerHTML = '';
+  Object.keys(LANG_NAMES).forEach(code => {
+    const opt = document.createElement('option');
+    opt.value = code;
+    opt.textContent = LANG_NAMES[code];
+    sel.appendChild(opt);
+  });
+  sel.value = currentLang;
+  sel.addEventListener('change', () => {
+    currentLang = sel.value;
+    localStorage.setItem('logo2png_lang', currentLang);
+    applyTranslations();
+  });
+}
+
+/* =========================================================
+   APP LOGIC
+   ========================================================= */
+const fileInput   = document.getElementById('file');
+const dropZone    = document.getElementById('drop');
+const modeSelect  = document.getElementById('mode');
+const bgColor     = document.getElementById('bg');
+const transparent = document.getElementById('transparent');
+const iconVersion = document.getElementById('iconVersion');
+const zipBtn      = document.getElementById('downloadZip');
+const looseBtn    = document.getElementById('downloadLoose');
+const previews    = document.getElementById('previews');
+const sizesGrid   = document.getElementById('sizesGrid');
+const customSize  = document.getElementById('customSize');
+const addSizeBtn  = document.getElementById('addSize');
+const status      = document.getElementById('status');
+
+let currentImage = null;
+let fileName     = 'logo';
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e => {
+  if (e.target.files[0]) handleFile(e.target.files[0]);
+});
+
+async function handleFile(file) {
+  fileName = file.name.replace(/\.[^.]+$/, '');
+  const isSVG = file.type === 'image/svg+xml' || file.name.toLowerCase().endsWith('.svg');
+
+  if (isSVG) {
+    const text = await file.text();
+    const blob = new Blob([text], { type: 'image/svg+xml' });
+    const url  = URL.createObjectURL(blob);
+    const img  = new Image();
+    img.onload = () => {
+      if (!img.naturalWidth || !img.naturalHeight) { img.width = 512; img.height = 512; }
+      currentImage = img;
+      URL.revokeObjectURL(url);
+      renderAll();
+    };
+    img.onerror = () => alert(t('alertSvgError'));
+    img.src = url;
+  } else {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => { currentImage = img; URL.revokeObjectURL(url); renderAll(); };
+    img.src = url;
+  }
+}
+
+addSizeBtn.addEventListener('click', () => {
+  const v = parseInt(customSize.value);
+  if (!v || v < 16 || v > 4096) { alert(t('alertInvalidSize')); return; }
+  const existing = [...sizesGrid.querySelectorAll('input[type=checkbox]')].find(cb => +cb.value === v);
+  if (existing) { existing.checked = true; customSize.value = ''; renderAll(); return; }
+
+  const label = document.createElement('label');
+  label.className = 'size-chip';
+  label.innerHTML = `<input type="checkbox" value="${v}" checked> ${v} × ${v}`;
+  sizesGrid.appendChild(label);
+  label.querySelector('input').addEventListener('change', renderAll);
+  customSize.value = '';
+  renderAll();
+});
+
+function getSelectedSizes() {
+  return [...sizesGrid.querySelectorAll('input[type=checkbox]:checked')]
+    .map(cb => +cb.value)
+    .sort((a, b) => b - a);
+}
+
+function drawOnCanvas(size) {
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+
+  if (transparent.checked) {
+    ctx.clearRect(0, 0, size, size);
+  } else {
+    ctx.fillStyle = bgColor.value;
+    ctx.fillRect(0, 0, size, size);
+  }
+
+  const iw = currentImage.naturalWidth  || currentImage.width;
+  const ih = currentImage.naturalHeight || currentImage.height;
+  const mode = modeSelect.value;
+
+  const isIcon = iconVersion.checked;
+  const padding = isIcon ? size * 0.15 : 0;
+  const innerSize = size - padding * 2;
+
+  let dx = padding, dy = padding, dw = innerSize, dh = innerSize;
+
+  if (mode === 'contain') {
+    const scale = Math.min(innerSize / iw, innerSize / ih);
+    dw = iw * scale; dh = ih * scale;
+    dx = padding + (innerSize - dw) / 2;
+    dy = padding + (innerSize - dh) / 2;
+  } else if (mode === 'cover') {
+    const scale = Math.max(innerSize / iw, innerSize / ih);
+    dw = iw * scale; dh = ih * scale;
+    dx = padding + (innerSize - dw) / 2;
+    dy = padding + (innerSize - dh) / 2;
+  }
+
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+
+  ctx.save();
+  if (mode === 'cover') {
+    ctx.beginPath();
+    ctx.rect(padding, padding, innerSize, innerSize);
+    ctx.clip();
+  }
+  ctx.drawImage(currentImage, dx, dy, dw, dh);
+  ctx.restore();
+
+  return canvas;
+}
+
+function renderAll() {
+  const sizes = getSelectedSizes();
+  looseBtn.textContent = t('downloadLoose');
+
+  if (!currentImage) {
+    zipBtn.textContent = t('downloadZip');
+    return;
+  }
+
+  previews.innerHTML = '';
+  previews.style.display = sizes.length ? 'flex' : 'none';
+
+  sizes.forEach(size => {
+    const sourceCanvas = drawOnCanvas(size);
+    const previewCanvas = document.createElement('canvas');
+    previewCanvas.width = size;
+    previewCanvas.height = size;
+    previewCanvas.getContext('2d').drawImage(sourceCanvas, 0, 0);
+
+    const item = document.createElement('div');
+    item.className = 'preview-item';
+    item.appendChild(previewCanvas);
+
+    const label = document.createElement('div');
+    label.className = 'label';
+    label.textContent = `${size} × ${size}${iconVersion.checked ? t('iconSuffix') : ''}`;
+    item.appendChild(label);
+
+    previews.appendChild(item);
+  });
+
+  const disabled = sizes.length === 0;
+  zipBtn.disabled = disabled;
+  looseBtn.disabled = disabled;
+  zipBtn.textContent = sizes.length
+    ? t('zipButton', { count: sizes.length, label: t(sizes.length === 1 ? 'zipButtonOne' : 'zipButtonMany') })
+    : t('downloadZip');
+}
+
+function canvasToBlob(canvas) {
+  return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+}
+
+function buildFileName(size) {
+  const suffix = iconVersion.checked ? '-icon' : '';
+  return `${fileName}_${size}x${size}${suffix}.png`;
+}
+
+zipBtn.addEventListener('click', async () => {
+  const sizes = getSelectedSizes();
+  if (!sizes.length || typeof JSZip === 'undefined') {
+    if (typeof JSZip === 'undefined') alert(t('alertJsZipError'));
+    return;
+  }
+
+  zipBtn.disabled = true;
+  const zip = new JSZip();
+  const folder = zip.folder(`${fileName}_png`);
+
+  for (let i = 0; i < sizes.length; i++) {
+    const size = sizes[i];
+    status.textContent = t('statusWorking', { size, current: i + 1, total: sizes.length });
+    const canvas = drawOnCanvas(size);
+    const blob = await canvasToBlob(canvas);
+    folder.file(buildFileName(size), blob);
+  }
+
+  status.textContent = t('statusZipCreating');
+  const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+
+  const url = URL.createObjectURL(zipBlob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${fileName}_png_${sizes.join('-')}.zip`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+
+  status.textContent = t('statusZipDone', { count: sizes.length });
+  setTimeout(() => status.textContent = '', 3000);
+  zipBtn.disabled = false;
+});
+
+looseBtn.addEventListener('click', async () => {
+  const sizes = getSelectedSizes();
+  if (!sizes.length) return;
+
+  looseBtn.disabled = true;
+  for (let i = 0; i < sizes.length; i++) {
+    const size = sizes[i];
+    status.textContent = t('statusDownloading', { size, current: i + 1, total: sizes.length });
+    const canvas = drawOnCanvas(size);
+    await new Promise(resolve => {
+      canvas.toBlob(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = buildFileName(size);
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        resolve();
+      }, 'image/png');
+    });
+    await new Promise(r => setTimeout(r, 250));
+  }
+  status.textContent = t('statusDownloaded', { count: sizes.length });
+  setTimeout(() => status.textContent = '', 3000);
+  looseBtn.disabled = false;
+});
+
+[modeSelect, bgColor, transparent, iconVersion].forEach(el => el.addEventListener('input', renderAll));
+sizesGrid.querySelectorAll('input[type=checkbox]').forEach(cb =>
+  cb.addEventListener('change', renderAll)
+);
+customSize.addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); addSizeBtn.click(); }
+});
+
+currentLang = detectLanguage();
+buildLangSwitcher();
+applyTranslations();
+
+/* =========================================================
+   SERVICE WORKER + auto-update
+   ========================================================= */
+if ('serviceWorker' in navigator) {
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (refreshing) return;
+    refreshing = true;
+    window.location.reload();
+  });
+
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./serviceworker.js')
+      .then(reg => {
+        console.log('SW registered:', reg.scope);
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              newWorker.postMessage('SKIP_WAITING');
+            }
+          });
+        });
+      })
+      .catch(err => console.warn('SW registration failed:', err));
+  });
+}
+</script>
+
+</body>
+</html>
