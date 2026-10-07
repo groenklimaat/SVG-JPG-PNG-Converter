@@ -1,7 +1,7 @@
 {
   "name": "PNG Converter — Logo, JPG & SVG to PNG",
   "short_name": "PNG Converter",
-  "description": "Convert a logo (PNG, JPG or SVG) to multiple PNG sizes with transparent background. Download as ZIP or separate files. Works fully offline. Available in 11 languages.",
+  "description": "Convert a logo (PNG, JPG or SVG) to multiple PNG sizes with transparent background. Works fully offline. Available in 11 languages.",
   "lang": "en",
   "dir": "ltr",
 
@@ -22,16 +22,34 @@
 
   "icons": [
     {
-      "src": "./icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
       "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "./icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "maskable"
+      "purpose": "any"
     }
   ],
 
